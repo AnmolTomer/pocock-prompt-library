@@ -30,7 +30,8 @@ input, textarea { caret-color: var(--ink); }
 .site-header { max-width: 1180px; min-height: 68px; margin: auto; padding: 12px 24px; display: flex; align-items: center; gap: 20px; border-bottom: 1px solid var(--line); }
 .wordmark { font-size: 23px; font-weight: 700; line-height: 1.15; letter-spacing: -.025em; text-decoration: none; white-space: nowrap; }
 .site-subtitle { padding-left: 20px; border-left: 1px solid var(--line); color: var(--muted); font-size: 15px; }
-.about-link { margin-left: auto; white-space: nowrap; font-size: 14px; }
+.github-link { margin-left: auto; display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: 5px; white-space: nowrap; font-size: 14px; font-weight: 600; text-decoration: none; }
+.github-link:hover { background: var(--selected); }
 .library { display: grid; grid-template-columns: 290px minmax(0, 1fr); max-width: 1180px; margin: auto; min-height: calc(100svh - 68px); }
 .index { background: var(--rail); border-right: 1px solid var(--line); padding: 26px 0; min-width: 0; }
 .index-heading { padding: 0 22px; }
@@ -102,7 +103,7 @@ input, textarea { caret-color: var(--ink); }
   .site-header { min-height: 76px; padding: 14px 18px; display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; }
   .wordmark { font-size: 22px; }
   .site-subtitle { border: 0; padding: 0; font-size: 13px; grid-column: 1 / -1; }
-  .about-link { font-size: 12px; grid-column: 2; grid-row: 1; }
+  .github-link { font-size: 12px; padding: 0 9px; grid-column: 2; grid-row: 1; }
   .library { display: block; min-height: calc(100svh - 76px); }
   .index { padding: 22px 0; border-right: 0; min-height: calc(100svh - 76px); }
   .index-heading { padding: 0 18px; }

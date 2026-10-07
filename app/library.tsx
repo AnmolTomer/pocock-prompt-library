@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, ArrowRight, ArrowUpRight, Search, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUpRight, Search, Star, X } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 
 import { sourceUrl, type Library } from '@/lib/prompt-model';
@@ -8,6 +8,7 @@ import CopyPrompt from './copy-prompt';
 import OriginalPost from './original-post';
 
 type Props = { library: Library; unavailable?: boolean };
+const repositoryUrl = 'https://github.com/AnmolTomer/pocock-prompt-library';
 
 function formatDate(date: string, month: 'short' | 'long' = 'short'): string {
   return new Intl.DateTimeFormat('en-GB', { day: '2-digit', month, year: 'numeric', timeZone: 'UTC' }).format(new Date(date));
@@ -54,7 +55,7 @@ export default function PromptLibrary({ library, unavailable = false }: Props): 
       <header className="site-header">
         <a className="wordmark" href="/">Prompt Library</a>
         <span className="site-subtitle">Matt Pocock’s daily prompts</span>
-        <a className="about-link" href="#about">About this archive</a>
+        <a className="github-link" href={repositoryUrl} target="_blank" rel="noopener noreferrer"><Star size={16} aria-hidden="true" /> Star on GitHub</a>
       </header>
       <main className="library" data-mobile-detail={mobileDetail}>
         <aside className="index" aria-label="Prompt index">
@@ -118,6 +119,7 @@ export default function PromptLibrary({ library, unavailable = false }: Props): 
         <div>
           <p>An independent collection of Matt Pocock’s <a href="https://x.com/mattpocockuk" target="_blank" rel="noopener noreferrer">Prompt of the Day</a> posts. Not affiliated with or endorsed by Matt.</p>
           <p>Commands may depend on <a href="https://github.com/mattpocock/skills" target="_blank" rel="noopener noreferrer">Matt’s skills</a> being installed in your coding agent.</p>
+          <p>Finding this useful? <a href={repositoryUrl} target="_blank" rel="noopener noreferrer">Give the project a star on GitHub</a>.</p>
         </div>
       </footer>
     </>
