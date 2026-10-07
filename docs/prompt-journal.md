@@ -12,7 +12,7 @@ STORY: Scan dates and titles, search or filter by month, expand a prompt, and co
 
 FIRST VIEWPORT: Slim masthead with GitHub action; wide search and month selector; month heading; dated rows with a timeline gutter, central prompt content, and right-aligned actions. Mobile puts dates above titles and actions beneath each entry.
 
-FORM: User-approved chronological journal, concept 05. The supplied visual is authoritative for composition; its generated prose is replaced with stored original content. Rows initially show real excerpts; selecting a title expands it and preserves existing tweet-ID fragment links.
+FORM: User-approved chronological journal, concept 05. The supplied visual is authoritative for composition; its generated prose is replaced with stored original content. Rows initially show the full original text. Titles independently collapse or expand each prompt; existing tweet-ID fragment links open their target without collapsing other entries.
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
 

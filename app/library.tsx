@@ -23,7 +23,7 @@ function monthLabel(month: string): string {
 export default function PromptLibrary({ library, unavailable = false }: Props): ReactElement {
   const [query, setQuery] = useState('');
   const [month, setMonth] = useState('all');
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [collapsedIds, setCollapsedIds] = useState<string[]>([]);
   const prompts = [...library.prompts].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
   const months = [...new Set(prompts.map(prompt => monthKey(prompt.publishedAt)))];
   const normalizedQuery = query.trim().toLocaleLowerCase();
@@ -40,9 +40,9 @@ export default function PromptLibrary({ library, unavailable = false }: Props): 
       if (library.prompts.some(prompt => prompt.tweetId === id)) {
         setQuery('');
         setMonth('all');
-        setExpandedId(id);
+        setCollapsedIds(ids => ids.filter(value => value !== id));
         requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: 'start' }));
-      } else setExpandedId(null);
+      }
     }
     fromLocation();
     window.addEventListener('hashchange', fromLocation);
@@ -54,9 +54,9 @@ export default function PromptLibrary({ library, unavailable = false }: Props): 
   }, [library.prompts]);
 
   function togglePrompt(id: string): void {
-    const next = expandedId === id ? null : id;
-    setExpandedId(next);
-    window.history.pushState(null, '', `${window.location.pathname}${window.location.search}${next ? `#${next}` : ''}`);
+    const opening = collapsedIds.includes(id);
+    setCollapsedIds(ids => opening ? ids.filter(value => value !== id) : [...ids, id]);
+    window.history.pushState(null, '', `${window.location.pathname}${window.location.search}${opening ? `#${id}` : ''}`);
   }
 
   function clearFilters(): void {
@@ -103,7 +103,7 @@ export default function PromptLibrary({ library, unavailable = false }: Props): 
             <h2 className="month-heading" id={`month-${value}`}>{monthLabel(value)}</h2>
             <div className="timeline">
               {filtered.filter(prompt => monthKey(prompt.publishedAt) === value).map(prompt => {
-                const expanded = expandedId === prompt.tweetId;
+                const expanded = !collapsedIds.includes(prompt.tweetId);
                 const short = Boolean(prompt.text && prompt.text.length <= 150);
                 const excerpt = prompt.text?.split('\n\n')[0].replace(/^\/[\w-]+\s*/, '') ?? 'View Matt’s original post.';
                 return (

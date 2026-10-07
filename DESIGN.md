@@ -168,7 +168,7 @@ The serif wordmark links home. The GitHub action and original-post links are oli
 
 ### Timeline entry
 
-Dates use tabular numerals. The first and expanded entry markers are olive; others are muted. Collapsed long prompts show a two-line excerpt, while short prompts retain their complete text. Copy and source actions stay visible independently of expansion.
+Dates use tabular numerals. The first and expanded entry markers are olive; others are muted. All prompts show their complete original text on initial load. Visitors may independently collapse long prompts to a two-line excerpt; short prompts retain their complete text. Copy and source actions stay visible independently of expansion.
 
 ## Do's and Don'ts
 
