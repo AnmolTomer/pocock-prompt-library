@@ -144,8 +144,6 @@ export default function PromptLibrary({ library, unavailable = false }: { librar
         <h2>About this archive</h2>
         <div>
           <p>An independent collection of Matt Pocock’s <a href="https://x.com/mattpocockuk" target="_blank" rel="noopener noreferrer">Prompt of the Day</a> posts. Not affiliated with or endorsed by Matt.</p>
-          <p>Copy returns the stored original prompt text, including its punctuation and line breaks. Other entries display Matt’s original post through X; one-click copying is unavailable for those embeds.</p>
-          <p>Public search can miss posts. This is a growing index, not a complete record. Collection began with the 30 days leading up to 7 October 2026.</p>
           <p>Commands may depend on <a href="https://github.com/mattpocock/skills" target="_blank" rel="noopener noreferrer">Matt’s skills</a> being installed in your coding agent.</p>
         </div>
       </footer>
