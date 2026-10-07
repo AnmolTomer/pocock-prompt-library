@@ -20,7 +20,7 @@ Browser QA covers desktop/mobile reading, original-post loading, selection, sear
 
 `lib/prompt-model.ts` validates entries. `lib/library-store.ts` performs parameterized D1 updates, deduplicates by tweet ID, preserves existing text on metadata-only updates, and advances freshness only on successful discovery. `app/mcp/route.ts` exposes public reads and owner-only writes using trusted Sites request identity plus configured editor email. Anonymous visitors cannot update the archive.
 
-The initial index has five verified posts from October 1–6, 2026. Discovery covered September 7–October 7 but does not establish exhaustive coverage. Only one prompt body is currently stored. Do not claim all entries have copyable text or that daily updates are enabled without a saved and verified schedule.
+The initial index has five verified posts from October 1–6, 2026. Discovery covered September 7–October 7 but does not establish exhaustive coverage. All five initial entries have exact stored text. The owner supplied the October 2, 4, 5, and 6 blocks, including closing commentary. Do not trim or rewrite these when copying. Do not claim daily updates are enabled without a saved and verified schedule.
 
 ## Daily refresh
 

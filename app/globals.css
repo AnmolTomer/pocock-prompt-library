@@ -68,10 +68,13 @@ input, textarea { caret-color: var(--ink); }
 .byline a { text-decoration: none; }
 .byline a:hover { text-decoration: underline; }
 .prompt-content { border-top: 2px solid #dce59a; padding: 18px 0 26px; }
-.copy-button { display: inline-flex; align-items: center; justify-content: center; gap: 9px; background: var(--action); color: white; border: 1px solid var(--action); border-radius: 5px; padding: 9px 16px; min-height: 44px; margin-top: 18px; font-size: 15px; line-height: 1.3; text-decoration: none; }
+.prompt-actions { margin-bottom: 18px; }
+.copy-button { display: inline-flex; align-items: center; justify-content: center; gap: 9px; background: var(--action); color: white; border: 1px solid var(--action); border-radius: 5px; padding: 9px 16px; min-height: 44px; font-size: 15px; line-height: 1.3; text-decoration: none; }
 .copy-button svg { width: 18px; }
 .copy-button:hover { background: #2d5159; }
 .copy-button:active { background: #102b32; }
+.copy-button:disabled { cursor: not-allowed; background: #e4e9e5; color: #53665f; border-color: #bac7c0; }
+.copy-help { color: var(--muted); font-size: 13px; margin: 7px 0 0; }
 .prompt-footer { border-top: 1px solid var(--line); padding-top: 18px; display: flex; flex-direction: column; gap: 9px; font-size: 13px; }
 .prompt-footer p { margin: 0; color: var(--muted); }
 .prompt-footer svg { flex-shrink: 0; width: 16px; }

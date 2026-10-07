@@ -1,22 +1,24 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, ArrowUpRight, Check, Copy, Search, X } from 'lucide-react';
-import type { Library } from '@/lib/prompt-model';
-import { sourceUrl } from '@/lib/prompt-model';
+import { ArrowLeft, ArrowRight, ArrowUpRight, Search, X } from 'lucide-react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
+
+import { sourceUrl, type Library } from '@/lib/prompt-model';
+import CopyPrompt from './copy-prompt';
 import OriginalPost from './original-post';
 
-const formatDate = (date: string, month: 'short' | 'long' = 'short') => new Intl.DateTimeFormat('en-GB', { day: '2-digit', month, year: 'numeric', timeZone: 'UTC' }).format(new Date(date));
+type Props = { library: Library; unavailable?: boolean };
 
-export default function PromptLibrary({ library, unavailable = false }: { library: Library; unavailable?: boolean }) {
+function formatDate(date: string, month: 'short' | 'long' = 'short'): string {
+  return new Intl.DateTimeFormat('en-GB', { day: '2-digit', month, year: 'numeric', timeZone: 'UTC' }).format(new Date(date));
+}
+
+export default function PromptLibrary({ library, unavailable = false }: Props): ReactElement {
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState(library.prompts[0]?.tweetId);
   const [mobileDetail, setMobileDetail] = useState(false);
-  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'manual'>('idle');
   const heading = useRef<HTMLHeadingElement>(null);
   const searchInput = useRef<HTMLInputElement>(null);
-  const manual = useRef<HTMLTextAreaElement>(null);
-  const selectionRef = useRef(selectedId);
   const selected = library.prompts.find(prompt => prompt.tweetId === selectedId);
   const normalizedQuery = query.trim().toLocaleLowerCase();
   const filtered = library.prompts.filter(prompt => [prompt.title, prompt.command, prompt.text, formatDate(prompt.publishedAt)].some(value => value?.toLocaleLowerCase().includes(normalizedQuery)));
@@ -36,18 +38,6 @@ export default function PromptLibrary({ library, unavailable = false }: { librar
     return () => { window.removeEventListener('hashchange', fromLocation); window.removeEventListener('popstate', fromLocation); };
   }, [library.prompts]);
 
-  useEffect(() => {
-    selectionRef.current = selectedId;
-    setCopyState('idle');
-  }, [selectedId]);
-
-  useEffect(() => {
-    if (copyState === 'manual') manual.current?.select();
-    if (copyState !== 'copied') return;
-    const timer = window.setTimeout(() => setCopyState('idle'), 2400);
-    return () => window.clearTimeout(timer);
-  }, [copyState]);
-
   function choose(id: string) {
     setSelectedId(id);
     setMobileDetail(true);
@@ -56,17 +46,6 @@ export default function PromptLibrary({ library, unavailable = false }: { librar
       window.scrollTo(0, 0);
       heading.current?.focus({ preventScroll: true });
     });
-  }
-
-  async function copyPrompt() {
-    if (!selected?.text) return;
-    const id = selected.tweetId;
-    try {
-      await navigator.clipboard.writeText(selected.text);
-      if (selectionRef.current === id) setCopyState('copied');
-    } catch {
-      if (selectionRef.current === id) setCopyState('manual');
-    }
   }
 
   return (
@@ -122,15 +101,9 @@ export default function PromptLibrary({ library, unavailable = false }: { librar
               </div>
               <h2 ref={heading} tabIndex={-1} className="prompt-title">{selected.title}</h2>
               <p className="byline">Matt Pocock <span aria-hidden="true">·</span> <a href="https://x.com/mattpocockuk" target="_blank" rel="noopener noreferrer">@mattpocockuk</a></p>
-              <div className="prompt-content">
-                <OriginalPost key={selected.tweetId} tweetId={selected.tweetId} />
-                {selected.text && (
-                  <>
-                    <button className="copy-button" onClick={copyPrompt}>{copyState === 'copied' ? <Check size={23} aria-hidden="true" /> : <Copy size={23} aria-hidden="true" />}{copyState === 'copied' ? 'Copied' : 'Copy prompt'}</button>
-                    <span className="sr-only" role="status">{copyState === 'copied' ? 'Prompt copied exactly to your clipboard.' : copyState === 'manual' ? 'Clipboard access failed. The exact text is selected below for manual copying.' : ''}</span>
-                    {copyState === 'manual' && <div className="manual-copy"><label htmlFor="manual-prompt">Clipboard access was blocked. Copy the selected text:</label><textarea ref={manual} id="manual-prompt" readOnly value={selected.text} rows={6} /></div>}
-                  </>
-                )}
+              <div className="prompt-content" key={selected.tweetId}>
+                <CopyPrompt text={selected.text} />
+                <OriginalPost tweetId={selected.tweetId} />
               </div>
               <footer className="prompt-footer">
                 <p>From the Prompt of the Day series</p>
