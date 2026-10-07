@@ -1,0 +1,27 @@
+import assert from 'node:assert/strict';
+
+const base = 'http://127.0.0.1:5173';
+const call = (name, args, headers = {}) => fetch(`${base}/mcp`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: args } }) });
+const initial = await (await fetch(`${base}/api/library`)).json();
+assert.equal(initial.prompts.length, 5);
+assert.equal((await call('update_prompt_library', { prompts: [], discoverySucceeded: false })).status, 403);
+assert.equal((await call('update_prompt_library', { prompts: [], discoverySucceeded: false }, { 'oai-authenticated-user-id': 'someone', 'oai-authenticated-user-email': 'other@sites.test' })).status, 403);
+const signIn = await fetch(`${base}/signin-with-chatgpt?return_to=/`, { redirect: 'manual' });
+const cookie = signIn.headers.get('set-cookie')?.split(';')[0];
+assert.ok(cookie, 'Local-only mock sign-in should return a test cookie');
+const owner = { Cookie: cookie };
+const fixture = { ...initial.prompts.at(-1), text: '  Synthetic verification text.\n\n- Preserve spacing.\n- Preserve punctuation!  ', textOrigin: 'user-provided' };
+const firstWrite = await (await call('update_prompt_library', { prompts: [fixture], discoverySucceeded: false }, owner)).json();
+assert.equal(firstWrite.result.isError, undefined, JSON.stringify(firstWrite));
+const metadataOnly = { ...fixture, text: null, textOrigin: null };
+const replay = await (await call('update_prompt_library', { prompts: [metadataOnly], discoverySucceeded: false }, owner)).json();
+assert.equal(replay.result.structuredContent.prompts.length, 5);
+assert.equal(replay.result.structuredContent.prompts.find(p => p.tweetId === fixture.tweetId).text, fixture.text);
+const invalid = await (await call('update_prompt_library', { prompts: [fixture, fixture], discoverySucceeded: true }, owner)).json();
+assert.equal(invalid.result.isError, true);
+assert.equal((await (await fetch(`${base}/api/library`)).json()).lastCheckedAt, initial.lastCheckedAt);
+const restored = await (await call('update_prompt_library', { prompts: [initial.prompts.at(-1)], discoverySucceeded: false }, owner)).json();
+assert.equal(restored.result.structuredContent.prompts.at(-1).text, initial.prompts.at(-1).text);
+assert.equal((await fetch(`${base}/mcp`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: 'x'.repeat(250001) })).status, 400);
+assert.equal((await call('update_prompt_library', { prompts: [], discoverySucceeded: true }, { ...owner, Origin: 'https://foreign.invalid' })).status, 403);
+console.log('PASS: public read, denied anonymous/wrong-owner writes, authorized local write, exact persistence, duplicate-safe retry, null-text preservation, invalid batch atomicity, unchanged freshness on failure, bounded body, foreign-origin rejection. Synthetic fixture restored. Local mock identity only; hosted authorization not proven.');
