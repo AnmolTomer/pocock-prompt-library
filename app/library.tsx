@@ -1,7 +1,7 @@
 'use client';
 
-import { ArrowLeft, ArrowRight, ArrowUpRight, Search, Star, X } from 'lucide-react';
-import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { ArrowUpRight, ChevronDown, Search, Star, X } from 'lucide-react';
+import { useEffect, useState, type ReactElement } from 'react';
 
 import { sourceUrl, type Library } from '@/lib/prompt-model';
 import CopyPrompt from './copy-prompt';
@@ -9,118 +9,134 @@ import OriginalPost from './original-post';
 
 type Props = { library: Library; unavailable?: boolean };
 const repositoryUrl = 'https://github.com/AnmolTomer/pocock-prompt-library';
+const dateFormatter = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
+const monthFormatter = new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 
-function formatDate(date: string, month: 'short' | 'long' = 'short'): string {
-  return new Intl.DateTimeFormat('en-GB', { day: '2-digit', month, year: 'numeric', timeZone: 'UTC' }).format(new Date(date));
+function monthKey(date: string): string {
+  return new Date(date).toISOString().slice(0, 7);
+}
+
+function monthLabel(month: string): string {
+  return monthFormatter.format(new Date(`${month}-01T00:00:00Z`));
 }
 
 export default function PromptLibrary({ library, unavailable = false }: Props): ReactElement {
   const [query, setQuery] = useState('');
-  const [selectedId, setSelectedId] = useState(library.prompts[0]?.tweetId);
-  const [mobileDetail, setMobileDetail] = useState(false);
-  const heading = useRef<HTMLHeadingElement>(null);
-  const searchInput = useRef<HTMLInputElement>(null);
-  const selected = library.prompts.find(prompt => prompt.tweetId === selectedId);
+  const [month, setMonth] = useState('all');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const prompts = [...library.prompts].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
+  const months = [...new Set(prompts.map(prompt => monthKey(prompt.publishedAt)))];
   const normalizedQuery = query.trim().toLocaleLowerCase();
-  const filtered = library.prompts.filter(prompt => [prompt.title, prompt.command, prompt.text, formatDate(prompt.publishedAt)].some(value => value?.toLocaleLowerCase().includes(normalizedQuery)));
-  const next = selected ? library.prompts[(library.prompts.findIndex(prompt => prompt.tweetId === selectedId) + library.prompts.length - 1) % library.prompts.length] : null;
+  const filtered = prompts.filter(prompt => (
+    (month === 'all' || monthKey(prompt.publishedAt) === month)
+    && [prompt.title, prompt.command, prompt.text, dateFormatter.format(new Date(prompt.publishedAt))]
+      .some(value => value?.toLocaleLowerCase().includes(normalizedQuery))
+  ));
+  const visibleMonths = months.filter(value => filtered.some(prompt => monthKey(prompt.publishedAt) === value));
 
   useEffect(() => {
-    function fromLocation() {
+    function fromLocation(): void {
       const id = window.location.hash.slice(1);
       if (library.prompts.some(prompt => prompt.tweetId === id)) {
-        setSelectedId(id);
-        setMobileDetail(true);
-      } else setMobileDetail(false);
+        setQuery('');
+        setMonth('all');
+        setExpandedId(id);
+        requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: 'start' }));
+      } else setExpandedId(null);
     }
     fromLocation();
     window.addEventListener('hashchange', fromLocation);
     window.addEventListener('popstate', fromLocation);
-    return () => { window.removeEventListener('hashchange', fromLocation); window.removeEventListener('popstate', fromLocation); };
+    return () => {
+      window.removeEventListener('hashchange', fromLocation);
+      window.removeEventListener('popstate', fromLocation);
+    };
   }, [library.prompts]);
 
-  function choose(id: string) {
-    setSelectedId(id);
-    setMobileDetail(true);
-    window.history.pushState(null, '', `#${id}`);
-    requestAnimationFrame(() => {
-      window.scrollTo(0, 0);
-      heading.current?.focus({ preventScroll: true });
-    });
+  function togglePrompt(id: string): void {
+    const next = expandedId === id ? null : id;
+    setExpandedId(next);
+    window.history.pushState(null, '', `${window.location.pathname}${window.location.search}${next ? `#${next}` : ''}`);
+  }
+
+  function clearFilters(): void {
+    setQuery('');
+    setMonth('all');
   }
 
   return (
     <>
-      {selected && <a className="skip-link" href="#prompt-detail" onClick={event => { event.preventDefault(); choose(selected.tweetId); }}>Skip to prompt</a>}
+      <a className="skip-link" href="#prompts">Skip to prompts</a>
       <header className="site-header">
-        <a className="wordmark" href="/">Prompt Library</a>
-        <span className="site-subtitle">Matt Pocock’s daily prompts</span>
-        <a className="github-link" href={repositoryUrl} target="_blank" rel="noopener noreferrer"><Star size={16} aria-hidden="true" /> Star on GitHub</a>
-      </header>
-      <main className="library" data-mobile-detail={mobileDetail}>
-        <aside className="index" aria-label="Prompt index">
-          <div className="index-heading">
-            <div className="index-label"><h1>Browse prompts</h1><span>{library.prompts.length}</span></div>
-            <div className="search-field">
-              <Search size={22} aria-hidden="true" />
-              <input ref={searchInput} type="search" aria-label="Search prompts" placeholder="Search prompts" value={query} onChange={event => setQuery(event.target.value)} />
-              {query && <button className="clear-search" aria-label="Clear search" onClick={() => setQuery('')}><X size={18} /></button>}
-            </div>
-          </div>
-          {unavailable ? <div className="index-message" role="alert"><h2>The library couldn’t load.</h2><p>Please try again in a moment.</p><a href="/">Reload library</a></div> : (
-            <>
-              <nav aria-label="Prompts">
-                {filtered.map(prompt => (
-                  <a key={prompt.tweetId} href={`#${prompt.tweetId}`} className={`index-entry${selectedId === prompt.tweetId ? ' selected' : ''}`} aria-current={selectedId === prompt.tweetId ? 'true' : undefined} onClick={event => { event.preventDefault(); choose(prompt.tweetId); }}>
-                    <time dateTime={prompt.publishedAt}>{formatDate(prompt.publishedAt)}</time>
-                    <span className="entry-title">{prompt.title}</span>
-                    <span className="entry-command">{prompt.command ?? 'Skills maintenance'}</span>
-                  </a>
-                ))}
-              </nav>
-              {!filtered.length && <div className="index-message" role="status"><h2>No matching prompts</h2><p>Try a topic or command, such as “retro”.</p><button className="text-button" onClick={() => setQuery('')}>Clear search</button></div>}
-              <p className="sr-only" role="status" aria-live="polite">{filtered.length} {filtered.length === 1 ? 'prompt' : 'prompts'} found.</p>
-            </>
-          )}
-          <div className="coverage">
-            <p>Coverage may be incomplete.</p>
-            <p>Initial collection: past 30 days</p>
-            {library.lastCheckedAt && <p>Last checked: <time dateTime={library.lastCheckedAt}>{formatDate(library.lastCheckedAt)}</time></p>}
-          </div>
-        </aside>
-        <section className="reader" id="prompt-detail" aria-label="Selected prompt">
-          <button className="back-button text-button" onClick={() => {
-            setMobileDetail(false);
-            window.history.pushState(null, '', window.location.pathname);
-            requestAnimationFrame(() => { window.scrollTo(0, 0); searchInput.current?.focus({ preventScroll: true }); });
-          }}><ArrowLeft size={18} /> All prompts</button>
-          {selected ? (
-            <article>
-              <div className="reader-meta">
-                <time dateTime={selected.publishedAt}>{formatDate(selected.publishedAt, 'long')}</time>
-                <a href={sourceUrl(selected.tweetId)} target="_blank" rel="noopener noreferrer">Original post <ArrowUpRight size={19} aria-hidden="true" /></a>
-              </div>
-              <h2 ref={heading} tabIndex={-1} className="prompt-title">{selected.title}</h2>
-              <p className="byline">Matt Pocock <span aria-hidden="true">·</span> <a href="https://x.com/mattpocockuk" target="_blank" rel="noopener noreferrer">@mattpocockuk</a></p>
-              <div className="prompt-content" key={selected.tweetId}>
-                <CopyPrompt text={selected.text} />
-                <OriginalPost tweetId={selected.tweetId} />
-              </div>
-              <footer className="prompt-footer">
-                <p>From the Prompt of the Day series</p>
-                {next && next.tweetId !== selected.tweetId && <a href={`#${next.tweetId}`} onClick={event => { event.preventDefault(); choose(next.tweetId); }}>Next: {next.title}<ArrowRight size={20} aria-hidden="true" /></a>}
-              </footer>
-            </article>
-          ) : <div className="reader-empty"><h2>Choose a prompt</h2><p>Browse the index to find something useful.</p></div>}
-        </section>
-      </main>
-      <footer id="about" className="about-section">
-        <h2>About this archive</h2>
-        <div>
-          <p>An independent collection of Matt Pocock’s <a href="https://x.com/mattpocockuk" target="_blank" rel="noopener noreferrer">Prompt of the Day</a> posts. Not affiliated with or endorsed by Matt.</p>
-          <p>Commands may depend on <a href="https://github.com/mattpocock/skills" target="_blank" rel="noopener noreferrer">Matt’s skills</a> being installed in your coding agent.</p>
-          <p>Finding this useful? <a href={repositoryUrl} target="_blank" rel="noopener noreferrer">Give the project a star on GitHub</a>.</p>
+        <div className="header-inner">
+          <a className="wordmark" href="/">Prompt Library</a>
+          <span className="site-subtitle">Matt Pocock’s daily prompts</span>
+          <a className="github-link" href={repositoryUrl} target="_blank" rel="noopener noreferrer"><Star size={21} aria-hidden="true" /> Star on GitHub</a>
         </div>
+      </header>
+      <main className="journal" id="prompts" tabIndex={-1}>
+        <h1 className="sr-only">Matt Pocock’s prompt journal</h1>
+        <div className="journal-filters">
+          <div className="search-field">
+            <Search size={21} aria-hidden="true" />
+            <input type="search" aria-label="Search prompts" placeholder="Search prompts" value={query} onChange={event => setQuery(event.target.value)} />
+            {query && <button type="button" className="clear-search" aria-label="Clear search" onClick={() => setQuery('')}><X size={18} aria-hidden="true" /></button>}
+          </div>
+          <div className="month-field">
+            <label htmlFor="month" className="sr-only">Filter by month</label>
+            <select id="month" value={month} onChange={event => setMonth(event.target.value)}>
+              <option value="all">All months</option>
+              {months.map(value => <option key={value} value={value}>{monthLabel(value)}</option>)}
+            </select>
+            <ChevronDown size={17} aria-hidden="true" />
+          </div>
+        </div>
+        <p className="sr-only" role="status" aria-live="polite">{filtered.length} {filtered.length === 1 ? 'prompt' : 'prompts'} found.</p>
+        {unavailable ? (
+          <div className="journal-message" role="alert"><h2>The library couldn’t load.</h2><p>Please try again in a moment.</p><a href="/">Reload library</a></div>
+        ) : !prompts.length ? (
+          <div className="journal-message"><h2>No prompts yet</h2><p>New prompts will appear here once they’ve been added.</p></div>
+        ) : !filtered.length ? (
+          <div className="journal-message"><h2>No matching prompts</h2><p>Try another topic, command, or month.</p><button className="text-button" onClick={clearFilters}>Clear filters</button></div>
+        ) : visibleMonths.map(value => (
+          <section className="journal-month" key={value} aria-labelledby={`month-${value}`}>
+            <h2 className="month-heading" id={`month-${value}`}>{monthLabel(value)}</h2>
+            <div className="timeline">
+              {filtered.filter(prompt => monthKey(prompt.publishedAt) === value).map(prompt => {
+                const expanded = expandedId === prompt.tweetId;
+                const short = Boolean(prompt.text && prompt.text.length <= 150);
+                const excerpt = prompt.text?.split('\n\n')[0].replace(/^\/[\w-]+\s*/, '') ?? 'View Matt’s original post.';
+                return (
+                  <article className={`journal-entry${expanded ? ' is-expanded' : ''}`} id={prompt.tweetId} key={prompt.tweetId} aria-labelledby={`title-${prompt.tweetId}`}>
+                    <time className="entry-date" dateTime={prompt.publishedAt}>{dateFormatter.format(new Date(prompt.publishedAt))}</time>
+                    <div className="entry-body">
+                      <h3 id={`title-${prompt.tweetId}`}>
+                        <button className="entry-toggle" aria-expanded={expanded} aria-controls={`text-${prompt.tweetId}`} onClick={() => togglePrompt(prompt.tweetId)}>
+                          {prompt.title}<ChevronDown size={17} aria-hidden="true" />
+                        </button>
+                      </h3>
+                      <span className="entry-command">{prompt.command ?? 'Skills maintenance'}</span>
+                      {!expanded && !short && <p className="entry-excerpt">{excerpt}</p>}
+                      {short && !expanded && <p className="prompt-text compact-text">{prompt.text}</p>}
+                      <div id={`text-${prompt.tweetId}`} hidden={!expanded}>
+                        <p className="byline">Matt Pocock · <a href="https://x.com/mattpocockuk" target="_blank" rel="noopener noreferrer">@mattpocockuk</a></p>
+                        {prompt.text ? <p className="prompt-text">{prompt.text}</p> : expanded && <OriginalPost tweetId={prompt.tweetId} />}
+                      </div>
+                    </div>
+                    <div className="entry-actions">
+                      <CopyPrompt text={prompt.text} />
+                      <a className="source-link" href={sourceUrl(prompt.tweetId)} target="_blank" rel="noopener noreferrer">Original post <ArrowUpRight size={15} aria-hidden="true" /></a>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        ))}
+      </main>
+      <footer className="site-footer">
+        <p>An independent archive. Not affiliated with or endorsed by Matt Pocock.</p>
+        <p>Prompts may require <a href="https://github.com/mattpocock/skills" target="_blank" rel="noopener noreferrer">Matt’s skills</a>. <a href={repositoryUrl} target="_blank" rel="noopener noreferrer">Give the project a star</a>.</p>
       </footer>
     </>
   );

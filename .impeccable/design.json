@@ -1,0 +1,185 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-07T15:37:27.977033+00:00",
+  "title": "Design System: Prompt Library",
+  "extensions": {
+    "colorMeta": {
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper"
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink"
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted ink"
+      },
+      "action": {
+        "role": "primary",
+        "displayName": "Action olive"
+      },
+      "selected": {
+        "role": "primary",
+        "displayName": "Selected olive tint"
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Fine rule"
+      },
+      "focus": {
+        "role": "primary",
+        "displayName": "Focus olive"
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Inset surface"
+      },
+      "field": {
+        "role": "neutral",
+        "displayName": "White field"
+      },
+      "field-border": {
+        "role": "neutral",
+        "displayName": "Field stroke"
+      },
+      "button-border": {
+        "role": "neutral",
+        "displayName": "Button stroke"
+      },
+      "action-hover": {
+        "role": "primary",
+        "displayName": "Deep action olive"
+      },
+      "button-hover": {
+        "role": "primary",
+        "displayName": "Neutral button hover"
+      },
+      "command-ink": {
+        "role": "primary",
+        "displayName": "Command ink"
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Wordmark",
+        "purpose": "Masthead identity."
+      },
+      "title": {
+        "displayName": "Entry title",
+        "purpose": "Expandable prompt headings."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Interface and supporting text."
+      },
+      "label": {
+        "displayName": "Month label",
+        "purpose": "Uppercase chronological grouping."
+      },
+      "prompt": {
+        "displayName": "Original prompt",
+        "purpose": "Whitespace-preserving stored content."
+      }
+    },
+    "shadows": [
+      {
+        "name": "timeline-dot-halo",
+        "value": "0 0 0 6px var(--paper)",
+        "purpose": "Masks the timeline rule behind a marker; does not create elevation."
+      }
+    ],
+    "motion": [
+      {
+        "name": "expansion-chevron",
+        "value": "transform 160ms ease-out",
+        "purpose": "Rotates the expansion chevron by 180 degrees; disabled under prefers-reduced-motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "compact-desktop",
+        "value": "900px"
+      },
+      {
+        "name": "mobile",
+        "value": "640px"
+      },
+      {
+        "name": "narrow-mobile",
+        "value": "380px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Copy button",
+      "kind": "button",
+      "refersTo": "button-copy",
+      "description": "Visible on collapsed entries.",
+      "html": "<button class=\"ds-copy\">Copy prompt</button>",
+      "css": ".ds-copy{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;font:400 15px/1.3 var(--sans, \"Source Sans 3\", sans-serif);padding:8px 12px;border-radius:4px;cursor:pointer;white-space:nowrap;background:#f0f1eb;color:var(--ink, #151b24);border:1px solid #d5d9ce}.ds-copy:hover{background:#e1e7d6}.ds-copy:active{transform:translateY(1px)}.ds-copy:focus-visible { outline: 2px solid var(--focus, #50643b); outline-offset: 4px; }.ds-copy:disabled{cursor:not-allowed;background:#e9ece4;color:#596451;border-color:#bac7b0}@media(max-width:640px){.ds-copy{min-height:44px}}"
+    },
+    {
+      "name": "Expanded copy button",
+      "kind": "button",
+      "refersTo": "button-copy-expanded",
+      "description": "Olive copy action on the expanded entry.",
+      "html": "<button class=\"ds-copy-expanded\">Copy prompt</button>",
+      "css": ".ds-copy-expanded{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;font:400 15px/1.3 var(--sans, \"Source Sans 3\", sans-serif);padding:8px 12px;border-radius:4px;cursor:pointer;white-space:nowrap;background:var(--action, #50643b);color:white;border:1px solid var(--action, #50643b)}.ds-copy-expanded:hover{background:#3f512e}.ds-copy-expanded:active{transform:translateY(1px)}.ds-copy-expanded:focus-visible { outline: 2px solid var(--focus, #50643b); outline-offset: 4px; }@media(max-width:640px){.ds-copy-expanded{min-height:44px}}"
+    },
+    {
+      "name": "Search field",
+      "kind": "input",
+      "description": "Wide search field with a container focus ring.",
+      "html": "<div class=\"ds-search\"><svg width=\"21\" height=\"21\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg><input type=\"search\" aria-label=\"Search prompts\" placeholder=\"Search prompts\"></div>",
+      "css": ".ds-search{display:flex;align-items:center;min-height:46px;padding:0 14px;border:1px solid #c8ccc5;border-radius:4px;background:#fff;color:var(--muted, #555e65)}.ds-search svg{flex-shrink:0}.ds-search input{width:100%;min-width:0;border:0;outline:0;background:transparent;color:var(--ink, #151b24);padding:8px 12px;font:400 17px/1.5 var(--sans, \"Source Sans 3\", sans-serif)}.ds-search input::placeholder{color:var(--muted, #555e65);opacity:1}.ds-search:focus-within{outline:2px solid var(--focus, #50643b);outline-offset:2px}"
+    },
+    {
+      "name": "Command label",
+      "kind": "chip",
+      "refersTo": "command",
+      "description": "Descriptive command text, without button behavior.",
+      "html": "<span class=\"ds-command\">/review</span>",
+      "css": ".ds-command{display:inline;padding:1px 7px 2px;background:var(--selected, #e9eddf);border-radius:3px;color:#415330;font:400 15px/1.5 var(--sans, \"Source Sans 3\", sans-serif);overflow-wrap:anywhere}"
+    },
+    {
+      "name": "Original-post navigation",
+      "kind": "nav",
+      "description": "Quiet olive provenance link.",
+      "html": "<a class=\"ds-source\" href=\"#source\">Original post <svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"M7 17 17 7M7 7h10v10\"/></svg></a>",
+      "css": ".ds-source{display:inline-flex;align-items:center;gap:3px;min-height:28px;color:var(--action, #50643b);font:400 15px/1.5 var(--sans, \"Source Sans 3\", sans-serif);text-underline-offset:.18em}.ds-source:hover{text-decoration:underline}.ds-source:focus-visible { outline: 2px solid var(--focus, #50643b); outline-offset: 4px; }@media(max-width:640px){.ds-source{min-height:44px}}"
+    },
+    {
+      "name": "Original prompt surface",
+      "kind": "custom",
+      "refersTo": "prompt",
+      "description": "Readable original text with whitespace preserved. Demonstration text only.",
+      "html": "<p class=\"ds-prompt\">Original prompt text appears here.\n\nLine breaks remain intact.</p>",
+      "css": ".ds-prompt{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;padding:16px 18px;border-radius:4px;background:#f0f1eb;color:var(--ink, #151b24);font:400 14px/1.7 ui-monospace,SFMono-Regular,Consolas,monospace}@media(max-width:640px){.ds-prompt{font-size:13px;padding:14px}}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Prompt Journal",
+    "overview": "Off-white paper, dark ink, olive actions, and serif headings give the archive its reading character. Compact sans-serif controls keep finding and copying a prompt straightforward.\n\nThe visual system is flat and restrained. Type, fine rules, and small tonal changes establish hierarchy. This document captures the implementation in `app/globals.css` and `app/library.tsx`; the selected page composition and acceptance criteria remain in `docs/prompt-journal.md`. No raster imagery ships.",
+    "keyCharacteristics": [
+      "Paper background and dark, readable text.",
+      "Serif titles with sans-serif controls and monospaced original text.",
+      "Fine timeline rules and compact command labels.",
+      "Olive accents for actions, focus, and expanded entries."
+    ],
+    "rules": [],
+    "dos": [
+      "Do preserve the serif title, sans-serif control, and monospace content roles.",
+      "Do keep focus indicators visible against the paper and tinted surfaces.",
+      "Do preserve original text whitespace and wrap long content within its container.",
+      "Do use fine rules and tonal surfaces to establish hierarchy."
+    ],
+    "donts": [
+      "Don't add elevation shadows to the existing flat journal components.",
+      "Don't turn command labels into controls without a corresponding interaction.",
+      "Don't replace original content with illustrative copy or image-based text."
+    ]
+  }
+}
