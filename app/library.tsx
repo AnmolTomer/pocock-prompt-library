@@ -53,7 +53,7 @@ export default function PromptLibrary({ library, unavailable = false }: { librar
     setMobileDetail(true);
     window.history.pushState(null, '', `#${id}`);
     requestAnimationFrame(() => {
-      if (window.matchMedia('(max-width: 760px)').matches) window.scrollTo(0, 0);
+      window.scrollTo(0, 0);
       heading.current?.focus({ preventScroll: true });
     });
   }
