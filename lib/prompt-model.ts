@@ -11,20 +11,11 @@ export const promptSchema = z.object({
   if ((prompt.text === null) !== (prompt.textOrigin === null)) {
     context.addIssue({ code: z.ZodIssueCode.custom, message: 'Text and its source classification must be provided together.' });
   }
-  if (prompt.textOrigin === 'short-original' && prompt.text!.trim().split(/\s+/).length > 25) {
+  if (prompt.textOrigin === 'short-original' && prompt.text !== null && prompt.text.trim().split(/\s+/).length > 25) {
     context.addIssue({ code: z.ZodIssueCode.custom, message: 'Short originals must be at most 25 words.' });
   }
   if (Date.parse(prompt.publishedAt) > Date.now() + 60000 || Date.parse(prompt.publishedAt) < Date.parse('2026-09-07T00:00:00Z')) {
     context.addIssue({ code: z.ZodIssueCode.custom, message: 'Publication date is outside this archive’s collection window.' });
-  }
-});
-
-export const updateSchema = z.object({
-  prompts: z.array(promptSchema).max(50),
-  discoverySucceeded: z.boolean(),
-}).strict().superRefine(({ prompts }, context) => {
-  if (new Set(prompts.map(prompt => prompt.tweetId)).size !== prompts.length) {
-    context.addIssue({ code: z.ZodIssueCode.custom, message: 'A batch must not repeat tweet IDs.' });
   }
 });
 

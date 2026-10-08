@@ -1,9 +1,8 @@
 import { env } from 'cloudflare:workers';
 import type { Library, Prompt } from './prompt-model';
-import { updateSchema } from './prompt-model';
 import { seedPrompts } from './seed-prompts';
 
-function database() {
+export function database() {
   if (!env.DB) throw new Error('Library storage is unavailable.');
   return env.DB;
 }
@@ -23,20 +22,4 @@ export async function readLibrary(): Promise<Library> {
     prompts: [...merged.values()].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt)),
     lastCheckedAt: (refresh.results[0] as { lastCheckedAt?: string } | undefined)?.lastCheckedAt ?? null,
   };
-}
-
-export async function updateLibrary(input: unknown) {
-  const { prompts, discoverySucceeded } = updateSchema.parse(input);
-  const db = database();
-  const writes = prompts.map(prompt => db.prepare(`
-    INSERT INTO prompts (tweet_id, title, command, published_at, prompt_text, text_origin)
-    VALUES (?, ?, ?, ?, ?, ?)
-    ON CONFLICT(tweet_id) DO UPDATE SET title=excluded.title, command=excluded.command,
-      published_at=excluded.published_at,
-      prompt_text=COALESCE(excluded.prompt_text, prompts.prompt_text),
-      text_origin=COALESCE(excluded.text_origin, prompts.text_origin)
-  `).bind(prompt.tweetId, prompt.title, prompt.command, prompt.publishedAt, prompt.text, prompt.textOrigin));
-  if (discoverySucceeded) writes.push(db.prepare("INSERT INTO refresh_state (id, last_checked_at) VALUES ('discovery', ?) ON CONFLICT(id) DO UPDATE SET last_checked_at=excluded.last_checked_at").bind(new Date().toISOString()));
-  if (writes.length) await db.batch(writes);
-  return readLibrary();
 }

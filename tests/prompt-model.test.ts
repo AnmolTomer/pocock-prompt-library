@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { canEdit, promptSchema, updateSchema, sourceUrl } from '../lib/prompt-model.ts';
+import { canEdit, promptSchema, sourceUrl } from '../lib/prompt-model.ts';
 
 const prompt = { tweetId: '2107433940638457866', title: 'A supplied prompt', command: '/test', publishedAt: '2026-10-06T11:33:00Z', text: '  /test preserve this.\n\n- Keep line breaks\n- Keep punctuation!  ', textOrigin: 'user-provided' };
 
@@ -11,13 +11,6 @@ test('preserves supplied prompt bytes, including whitespace', () => {
 test('rejects malformed IDs, missing provenance, and empty bodies', () => {
   for (const input of [{ ...prompt, tweetId: '../evil' }, { ...prompt, textOrigin: null }, { ...prompt, text: ' \n ' }, { ...prompt, title: '' }, { ...prompt, publishedAt: '2030-01-01T00:00:00Z' }]) assert.equal(promptSchema.safeParse(input).success, false);
   assert.equal(promptSchema.safeParse({ ...prompt, text: null, textOrigin: null }).success, true);
-});
-
-test('bounds batches and rejects repeated tweet IDs before any write', () => {
-  assert.equal(updateSchema.safeParse({ prompts: [prompt, prompt], discoverySucceeded: true }).success, false);
-  assert.equal(updateSchema.safeParse({ prompts: [], discoverySucceeded: true }).success, true);
-  assert.equal(updateSchema.safeParse({ prompts: [], discoverySucceeded: 'yes' }).success, false);
-  assert.equal(updateSchema.safeParse({ prompts: [], discoverySucceeded: true, owner: true }).success, false);
 });
 
 test('denies absent identity, wrong owner, and missing editor configuration', () => {

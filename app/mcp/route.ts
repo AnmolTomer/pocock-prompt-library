@@ -1,18 +1,55 @@
 import { env } from 'cloudflare:workers';
-import { ZodError } from 'zod';
+import { z, ZodError } from 'zod';
 import { canEdit } from '@/lib/prompt-model';
-import { readLibrary, updateLibrary } from '@/lib/library-store';
+import { database, readLibrary } from '@/lib/library-store';
+import { CollectionConflict, finishRun, listRuns, readRun, startRun } from '@/lib/collection-store';
+import { seedPrompts } from '@/lib/seed-prompts';
+import { collectionGuide } from '@/lib/collection-guide';
 
+const noArguments = { type: 'object', properties: {}, additionalProperties: false };
+const idList = { type: 'array', maxItems: 100, items: { type: 'string', pattern: '^\\d{18,20}$' } };
 const tools = [
-  { name: 'get_prompt_library', description: 'Read the public prompt index, exact available prompt text, and the last successful discovery time.', inputSchema: { type: 'object', properties: {}, additionalProperties: false } },
-  { name: 'update_prompt_library', description: 'Owner-only: atomically add verified Matt Pocock Prompt of the Day entries. Deduplicates by tweet ID. Preserve exact supplied prompt text and line breaks; no rewrites. Use null text and textOrigin when a full original is unavailable. Supply full text only from user-provided or explicitly licensed material, or complete original prompts of at most 25 words. Set discoverySucceeded true only after successful source discovery, including no-new-post results. A failed search must not update freshness.', inputSchema: {
-    type: 'object', required: ['prompts', 'discoverySucceeded'], additionalProperties: false,
-    properties: { discoverySucceeded: { type: 'boolean' }, prompts: { type: 'array', maxItems: 50, items: {
-      type: 'object', additionalProperties: false, required: ['tweetId', 'title', 'command', 'publishedAt', 'text', 'textOrigin'],
-      properties: { tweetId: { type: 'string', pattern: '^\\d{18,20}$' }, title: { type: 'string', maxLength: 120 }, command: { type: ['string', 'null'], maxLength: 100 }, publishedAt: { type: 'string', format: 'date-time' }, text: { type: ['string', 'null'], maxLength: 20000 }, textOrigin: { enum: ['user-provided', 'licensed-source', 'short-original', null] } },
-    } } },
+  { name: 'get_prompt_library', description: 'Read published prompts and the last successful search time.', inputSchema: noArguments },
+  { name: 'get_collection_instructions', description: 'Read the current daily/manual collection procedure before running it.', inputSchema: noArguments },
+  { name: 'get_collection_runs', description: 'Owner-only: read the latest 100 collection runs, including successful empty checks. Optionally read one run by ID.', inputSchema: { type: 'object', properties: { runId: { type: 'string', format: 'uuid' } }, additionalProperties: false } },
+  { name: 'start_collection_run', description: 'Owner-only: record a run before searching. Reuse the same UUID for retries. Returns the search window. One run at a time; abandoned runs expire after one hour. Verification runs only test persistence and never advance discovery freshness.', inputSchema: {
+    type: 'object', required: ['runId', 'trigger'], additionalProperties: false,
+    properties: { runId: { type: 'string', format: 'uuid' }, trigger: { enum: ['scheduled', 'manual', 'verification'] } },
+  } },
+  { name: 'finish_collection_run', description: 'Owner-only: atomically save complete verified new prompts and finish a run. Existing complete prompts are immutable through collection. Success with no additions records no_changes. Failures and incomplete retrieval never advance freshness. Retry the same run ID after an uncertain response; terminal runs are immutable. Never store secrets in search evidence.', inputSchema: {
+    type: 'object', required: ['runId', 'outcome', 'prompts', 'queries', 'checkedTweetIds', 'unresolvedTweetIds', 'errorCode'], additionalProperties: false,
+    properties: {
+      runId: { type: 'string', format: 'uuid' }, outcome: { enum: ['success', 'incomplete', 'failed', 'verified'] },
+      queries: { type: 'array', maxItems: 12, items: { type: 'string', minLength: 1, maxLength: 500 } },
+      checkedTweetIds: idList, unresolvedTweetIds: idList,
+      errorCode: { enum: ['search_unavailable', 'source_unavailable', 'text_unavailable', 'verification_failed', null] },
+      prompts: { type: 'array', maxItems: 50, items: {
+        type: 'object', additionalProperties: false, required: ['tweetId', 'title', 'command', 'publishedAt', 'text', 'textOrigin'],
+        properties: {
+          tweetId: { type: 'string', pattern: '^\\d{18,20}$' }, title: { type: 'string', minLength: 1, maxLength: 120 },
+          command: { type: ['string', 'null'], maxLength: 100 }, publishedAt: { type: 'string', format: 'date-time' },
+          text: { type: 'string', minLength: 1, maxLength: 20000 }, textOrigin: { enum: ['user-provided', 'licensed-source', 'short-original'] },
+        },
+      } },
+    },
   } },
 ];
+
+async function callTool(name: string, args: unknown): Promise<unknown> {
+  switch (name) {
+    case 'get_prompt_library': return readLibrary();
+    case 'get_collection_instructions': return { instructions: collectionGuide };
+    case 'get_collection_runs': {
+      const { runId } = z.object({ runId: z.string().uuid().optional() }).strict().parse(args ?? {});
+      if (!runId) return { runs: await listRuns(database()) };
+      const run = await readRun(database(), runId);
+      return { runs: run ? [run] : [] };
+    }
+    case 'start_collection_run': return startRun(database(), args);
+    case 'finish_collection_run': return finishRun(database(), seedPrompts, args);
+    default: throw new Error('Unknown tool');
+  }
+}
 
 async function boundedJson(request: Request) {
   if (!request.headers.get('content-type')?.includes('application/json')) throw new Error('content-type');
@@ -46,13 +83,13 @@ export async function POST(request: Request) {
   if (call.method === 'ping') return result({});
   if (call.method === 'tools/list') return result({ tools });
   if (call.method !== 'tools/call') return error(-32601, 'Method not found');
-  if (!['get_prompt_library', 'update_prompt_library'].includes(call.params?.name)) return error(-32602, 'Unknown tool');
-  if (call.params.name === 'update_prompt_library' && !canEdit(env.LIBRARY_EDITOR_EMAIL, request.headers.get('oai-authenticated-user-id'), request.headers.get('oai-authenticated-user-email'))) return new Response('Owner authentication required', { status: 403 });
+  if (!tools.some(tool => tool.name === call.params?.name)) return error(-32602, 'Unknown tool');
+  if (!['get_prompt_library', 'get_collection_instructions'].includes(call.params.name) && !canEdit(env.LIBRARY_EDITOR_EMAIL, request.headers.get('oai-authenticated-user-id'), request.headers.get('oai-authenticated-user-email'))) return new Response('Owner authentication required', { status: 403 });
   try {
-    const library = call.params.name === 'get_prompt_library' ? await readLibrary() : await updateLibrary(call.params.arguments);
+    const library = await callTool(call.params.name, call.params.arguments);
     return result({ content: [{ type: 'text', text: JSON.stringify(library) }], structuredContent: library });
   } catch (failure) {
-    return result({ isError: true, content: [{ type: 'text', text: failure instanceof ZodError ? 'Invalid prompt records. Check required fields, dates, duplicate IDs, and text source classifications.' : 'Library storage is temporarily unavailable. Retry without changing the records.' }] });
+    return result({ isError: true, content: [{ type: 'text', text: failure instanceof ZodError ? 'Invalid collection input: ' + failure.issues.map(issue => issue.message).join(' ') : failure instanceof CollectionConflict ? failure.message : 'Library storage is temporarily unavailable. Retry with the same run ID.' }] });
   }
 }
 
