@@ -10,6 +10,10 @@ const noArguments = { type: 'object', properties: {}, additionalProperties: fals
 const idList = { type: 'array', maxItems: 100, items: { type: 'string', pattern: '^\\d{18,20}$' } };
 const tools = [
   { name: 'get_prompt_library', description: 'Read published prompts and the last successful search time.', inputSchema: noArguments },
+  { name: 'update_prompt_library', description: 'Compatibility check for older connected clients. Only prompts:[] and discoverySucceeded:false are accepted. Records an owner-authenticated verification run and returns its persisted result without changing prompts or discovery freshness. For collection, refresh tools and use start_collection_run and finish_collection_run.', inputSchema: {
+    type: 'object', required: ['prompts', 'discoverySucceeded'], additionalProperties: false,
+    properties: { prompts: { type: 'array', maxItems: 0, items: { type: 'object' } }, discoverySucceeded: { type: 'boolean', const: false } },
+  } },
   { name: 'get_collection_instructions', description: 'Read the current daily/manual collection procedure before running it.', inputSchema: noArguments },
   { name: 'get_collection_runs', description: 'Owner-only: read the latest 100 collection runs, including successful empty checks. Optionally read one run by ID.', inputSchema: { type: 'object', properties: { runId: { type: 'string', format: 'uuid' } }, additionalProperties: false } },
   { name: 'start_collection_run', description: 'Owner-only: record a run before searching. Reuse the same UUID for retries. Returns the search window. One run at a time; abandoned runs expire after one hour. Verification runs only test persistence and never advance discovery freshness.', inputSchema: {
@@ -38,6 +42,16 @@ const tools = [
 async function callTool(name: string, args: unknown): Promise<unknown> {
   switch (name) {
     case 'get_prompt_library': return readLibrary();
+    case 'update_prompt_library': {
+      z.object({ prompts: z.array(z.never()).max(0), discoverySucceeded: z.literal(false) }).strict().parse(args);
+      const runId = crypto.randomUUID();
+      const db = database();
+      await startRun(db, { runId, trigger: 'verification' });
+      const verificationRun = await finishRun(db, seedPrompts, {
+        runId, outcome: 'verified', prompts: [], queries: [], checkedTweetIds: [], unresolvedTweetIds: [], errorCode: null,
+      });
+      return { ...await readLibrary(), verificationRun };
+    }
     case 'get_collection_instructions': return { instructions: collectionGuide };
     case 'get_collection_runs': {
       const { runId } = z.object({ runId: z.string().uuid().optional() }).strict().parse(args ?? {});

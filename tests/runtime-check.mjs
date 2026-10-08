@@ -7,7 +7,7 @@ const call = (name, args, headers = {}) => fetch(`${base}/mcp`, { method: 'POST'
 const initial = await (await fetch(`${base}/api/library`)).json();
 const runId = randomUUID();
 const start = { runId, trigger: 'verification' };
-for (const name of ['start_collection_run', 'finish_collection_run', 'get_collection_runs']) {
+for (const name of ['start_collection_run', 'finish_collection_run', 'get_collection_runs', 'update_prompt_library']) {
   assert.equal((await call(name, start)).status, 403);
   assert.equal((await call(name, start, { 'oai-authenticated-user-id': 'someone', 'oai-authenticated-user-email': 'other@sites.test' })).status, 403);
 }
@@ -27,6 +27,14 @@ const finish = { runId, outcome: 'verified', prompts: [], queries: [], checkedTw
 assert.equal((await ownerCall('finish_collection_run', finish)).status, 'verified');
 assert.equal((await ownerCall('finish_collection_run', finish)).status, 'verified');
 assert.equal((await ownerCall('get_collection_runs', { runId })).runs[0].status, 'verified');
+assert.deepEqual(await (await fetch(`${base}/api/library`)).json(), initial);
+const compatibility = await ownerCall('update_prompt_library', { prompts: [], discoverySucceeded: false });
+assert.equal(compatibility.verificationRun.status, 'verified');
+assert.equal((await ownerCall('get_collection_runs', { runId: compatibility.verificationRun.id })).runs[0].status, 'verified');
+for (const args of [{ prompts: [], discoverySucceeded: true }, { prompts: [initial.prompts[0]], discoverySucceeded: false }]) {
+  const rejected = await (await call('update_prompt_library', args, owner)).json();
+  assert.equal(rejected.result.isError, true);
+}
 assert.deepEqual(await (await fetch(`${base}/api/library`)).json(), initial);
 const invalid = await (await call('start_collection_run', { ...start, runId: 'bad' }, owner)).json();
 assert.equal(invalid.result.isError, true);

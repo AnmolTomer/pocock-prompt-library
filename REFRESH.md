@@ -37,4 +37,6 @@ Publish only complete exact prompt text from owner-provided or explicitly reusab
 
 Connect the provisioned Prompt Library plugin. Read the library, start a `verification` run, finish it with `verified` and empty evidence, then read it back through the same owner connection. This proves authorized persistence without changing public content. Check missing/wrong identity and invalid inputs locally. The SQLite tests exercise real migration SQL, duplicates, partial failures, no-change runs and stale locks, without external search.
 
+After changing tool definitions, use the plugin's **Manage → Refresh tools** action; reconnecting OAuth alone does not refresh the definitions. Older clients retain `update_prompt_library` only as a compatibility check: empty `prompts` and `discoverySucceeded:false` record and return a persisted verification run through the same start/finish implementation. Nonempty updates and discovery claims are rejected. This path never collects or changes prompts; actual collection requires the refreshed tools.
+
 Once the writer works, create the Sites-linked daily task for 17:00 Asia/Kolkata. Preserve its ID and do not duplicate it. Read the saved schedule back. Per the owner request, the first live new-prompt ingestion test is deferred until explicitly requested; do not fabricate a successful empty production run to stand in for it.
