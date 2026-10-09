@@ -140,12 +140,15 @@ input, textarea { caret-color: var(--ink); }
   .journal { display: flex; flex-direction: column; padding-top: 20px; }
   .journal-filters { order: -2; margin-bottom: 12px; }
   .calendar-sidebar { order: -1; border-right: 0; padding: 0 0 20px; }
-  .browse-dates { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 8px 12px; background: transparent; border: 1px solid #c8ccc5; border-radius: 4px; color: var(--ink); text-align: left; }
+  .browse-dates { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 8px 12px; background: transparent; border: 0; border-radius: 4px; color: var(--ink); text-align: left; }
   .browse-dates > svg:last-child { margin-left: auto; }
   .browse-dates[aria-expanded='true'] > svg:last-child { transform: rotate(180deg); }
   .calendar-panel { display: none; position: static; padding-top: 20px; }
   .calendar-panel.is-open { display: block; }
-  .prompt-calendar { max-width: 400px; margin-inline: auto; }
+  .prompt-calendar { display: grid; grid-template-columns: 1fr 1fr; max-width: 400px; margin-inline: auto; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+  .calendar-heading, .calendar-grid { grid-column: 1 / -1; }
+  .calendar-legend { border: 0; padding: 0; margin: 18px 0 0; font-size: 14px; }
+  .calendar-count { padding: 0; margin-top: 18px; text-align: right; font-size: 14px; align-self: center; }
   .calendar-day { width: 38px; height: 38px; }
   .calendar-grid td { height: 46px; }
   .search-field { padding-inline: 10px; }
