@@ -1,6 +1,7 @@
 'use client';
 
-import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react';
+import { Select } from 'radix-ui';
 import { useRef, useState, type KeyboardEvent, type ReactElement } from 'react';
 import { FIRST_MONTH, LAST_MONTH, monthDays, monthLabel, moveCalendarFocus, shiftMonth } from '@/lib/calendar-model';
 
@@ -44,11 +45,26 @@ export default function PromptCalendar({ month, today, selectedDay, counts, unav
     <div className="prompt-calendar">
       <div className="calendar-heading">
         <div className="calendar-month-select">
-          <label htmlFor="calendar-month" className="sr-only">Browse month</label>
-          <select id="calendar-month" value={month} onChange={event => onMonthChange(event.target.value)}>
-            {options.map(value => <option key={value} value={value}>{monthLabel(value)}</option>)}
-          </select>
-          <ChevronDown size={16} aria-hidden="true" />
+          <Select.Root value={month} onValueChange={onMonthChange}>
+            <Select.Trigger className="month-trigger" aria-label="Browse month">
+              <Select.Value>{monthLabel(month)}</Select.Value>
+              <Select.Icon asChild><ChevronDown size={16} aria-hidden="true" /></Select.Icon>
+            </Select.Trigger>
+            <Select.Portal>
+              <Select.Content className="month-menu" position="popper" align="start" sideOffset={6} collisionPadding={16}>
+                <Select.ScrollUpButton className="month-scroll"><ChevronUp size={16} aria-hidden="true" /></Select.ScrollUpButton>
+                <Select.Viewport className="month-options">
+                  {options.map(value => (
+                    <Select.Item className="month-option" key={value} value={value}>
+                      <Select.ItemText>{monthLabel(value)}</Select.ItemText>
+                      <Select.ItemIndicator className="month-check"><Check size={16} aria-hidden="true" /></Select.ItemIndicator>
+                    </Select.Item>
+                  ))}
+                </Select.Viewport>
+                <Select.ScrollDownButton className="month-scroll"><ChevronDown size={16} aria-hidden="true" /></Select.ScrollDownButton>
+              </Select.Content>
+            </Select.Portal>
+          </Select.Root>
         </div>
         <button className="calendar-nav" aria-label="Previous month" disabled={month === FIRST_MONTH} onClick={() => onMonthChange(shiftMonth(month, -1))}><ChevronLeft size={20} aria-hidden="true" /></button>
         <button className="calendar-nav" aria-label="Next month" disabled={month === LAST_MONTH} onClick={() => onMonthChange(shiftMonth(month, 1))}><ChevronRight size={20} aria-hidden="true" /></button>
