@@ -100,6 +100,12 @@ test('unresolved and missing full bodies cannot be published or reported success
   sql.close();
 });
 
+test('short originals allow up to 200 words and reject longer text', () => {
+  const words = (count: number) => Array.from({ length: count }, (_, index) => `word${index}`).join(' ');
+  assert.equal(promptSchema.safeParse({ ...prompt, text: words(200), textOrigin: 'short-original' }).success, true);
+  assert.equal(promptSchema.safeParse({ ...prompt, text: words(201), textOrigin: 'short-original' }).success, false);
+});
+
 test('connection checks persist separately and never claim a discovery run', async () => {
   const { db, sql } = database();
   const runId = randomUUID();
